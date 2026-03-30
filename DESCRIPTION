@@ -13,6 +13,7 @@ Imports:
     pool,
     qrcode,
     RSQLite,
+    sass,
     shiny,
     shinyjs,
     stats

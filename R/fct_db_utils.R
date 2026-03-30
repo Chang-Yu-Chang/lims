@@ -15,6 +15,7 @@ initialize_database <- function() {
       CREATE TABLE sites (
         site_id TEXT PRIMARY KEY,
         site_name TEXT NOT NULL,
+        description TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     ")
@@ -53,11 +54,12 @@ initialize_database <- function() {
 #' @param con Database connection
 #' @param site_id Site ID
 #' @param site_name Site name
+#' @param description Site description (optional)
 #' @export
-insert_site <- function(con, site_id, site_name) {
+insert_site <- function(con, site_id, site_name, description = NULL) {
   DBI::dbExecute(con, 
-    "INSERT INTO sites (site_id, site_name) VALUES (?, ?)",
-    list(site_id, site_name)
+    "INSERT INTO sites (site_id, site_name, description) VALUES (?, ?, ?)",
+    list(site_id, site_name, description)
   )
 }
 
@@ -200,4 +202,51 @@ generate_label_png <- function(qr_text, filename) {
   qr <- qrcode::qr_code(qr_text)
   qrcode::plot(qr, type = "html")
   filename
+}
+
+#' Get Next Sequential Site ID
+#'
+#' Generates the next sequential site ID based on existing sites in database.
+#' Starts with ST0001 if no sites exist.
+#'
+#' @param con Database connection
+#' @return Next site ID (ST0001, ST0002, etc.)
+#' @export
+get_next_site_id <- function(con) {
+  result <- DBI::dbGetQuery(con, "
+    SELECT site_id FROM sites 
+    WHERE site_id LIKE 'ST%' 
+    ORDER BY site_id DESC 
+    LIMIT 1
+  ")
+  
+  if (nrow(result) == 0) {
+    return("ST0001")
+  }
+  
+  last_id <- result$site_id[1]
+  last_num <- as.numeric(substr(last_id, 3, 6))
+  next_num <- last_num + 1
+  
+  paste0("ST", sprintf("%04d", next_num))
+}
+
+#' Add Site
+#'
+#' Adds a new site with auto-generated sequential ID (ST0001, ST0002, etc.)
+#'
+#' @param con Database connection
+#' @param site_name Site name
+#' @param description Site description
+#' @return Invisibly returns the new site ID
+#' @export
+add_site <- function(con, site_name, description = NULL) {
+  if (!validate_sample_id(site_name)) {
+    stop("Site name cannot be empty")
+  }
+  
+  new_id <- get_next_site_id(con)
+  insert_site(con, new_id, site_name, description)
+  
+  invisible(new_id)
 }

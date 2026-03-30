@@ -7,81 +7,98 @@
 #' @return Shiny UI
 #'
 #' @export
+#' Home Page Module UI
 mod_home_ui <- function(id) {
   ns <- shiny::NS(id)
-  
-  shiny::div(
-    class = "home-page",
-    style = "text-align: center; padding: 60px 20px;",
-    
-    # Logo placeholder (we'll add your actual logo here)
-    shiny::div(
-      class = "logo-container",
-      style = "margin-bottom: 40px;",
-      shiny::tags$img(
+
+  # bslib::page_fillable or tagList works well here
+  tagList(
+    # 1. Hero Section (Centered Logo and Title)
+    div(
+      style = "text-align: center; padding: 3rem 1rem;",
+      img(
         src = "www/logo.png",
-        height = "300px",
-        alt = "Lab Logo"
-      )
-    ),
-    
-    # Title
-    shiny::h1("Chang Lab LIMS", style = "color: #2c3e50; margin-bottom: 20px;"),
-    
-    # Subtitle
-    shiny::h3("Laboratory Information Management System", 
-              style = "color: #7f8c8d; font-weight: 300; margin-bottom: 40px;"),
-    
-    # Description
-    shiny::div(
-      class = "description",
-      style = "max-width: 600px; margin: 0 auto; line-height: 1.8; color: #34495e; font-size: 16px;",
-      shiny::p(
-        "Track your lab samples from collection to storage and use.",
-        shiny::br(),
-        "Manage sample sites, generate QR codes for quick identification, ",
-        "and maintain complete records of sample storage locations and usage history."
-      )
-    ),
-    
-    # Quick stats (optional - can expand later)
-    shiny::div(
-      class = "quick-stats",
-      style = "margin-top: 60px; display: flex; justify-content: center; gap: 40px;",
-      shiny::div(
-        style = "text-align: center;",
-        shiny::h2("0", style = "color: #3498db; margin: 0;"),
-        shiny::p("Sites", style = "color: #7f8c8d; margin: 5px 0 0 0;")
+        height = "220px",
+        style = "margin-bottom: 2rem; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));"
       ),
-      shiny::div(
-        style = "text-align: center;",
-        shiny::h2("0", style = "color: #2ecc71; margin: 0;"),
-        shiny::p("Samples", style = "color: #7f8c8d; margin: 5px 0 0 0;")
-      ),
-      shiny::div(
-        style = "text-align: center;",
-        shiny::h2("0", style = "color: #e74c3c; margin: 0;"),
-        shiny::p("Scans", style = "color: #7f8c8d; margin: 5px 0 0 0;")
+      h2("Chang Lab @BRCAS", class = "fw-bold"),
+      h3("Laboratory Information Management System (LIMS)", class = "text-muted mb-4"),
+
+      # Description constrained to a readable width
+      div(
+        style = "max-width: 700px; margin: 0 auto;",
+        tags$ul(
+          class = "list-unstyled fs-5 mt-4",
+          style = "line-height: 2;",
+          tags$li(
+            bsicons::bs_icon("check2-circle", class = "text-primary me-2"), "Track lab samples from collection to storage and use."
+          ),
+          tags$li(
+            bsicons::bs_icon("check2-circle", class = "text-primary me-2"), "Manage sample sites and generate unique QR codes."
+          ),
+          tags$li(bsicons::bs_icon("check2-circle", class = "text-primary me-2"), "Maintain complete records of storage locations and usage history.")
+        )
       )
     ),
-    
-    # Footer note
-    shiny::div(
-      style = "margin-top: 80px; color: #95a5a6; font-size: 14px;",
-      shiny::p("Use the navigation tabs above to get started")
+
+    # 2. Quick Stats Section (Modern Value Boxes)
+    # width = 1/3 ensures 3 boxes per row on PC, but stacks on mobile
+    bslib::layout_column_wrap(
+      width = 1/3,
+      gap = "1rem",
+      style = "min-height: 250px; min-width: 300px;",
+      
+      bslib::value_box(
+        title = "Total Sites",
+        value = "1", # Pure hardcoded string for testing
+        showcase = bsicons::bs_icon("geo-alt-fill", class = "text-primary"),
+        theme = NULL,
+        fill = FALSE,
+        class = "border-0 shadow-sm"
+      ),
+      bslib::value_box(
+        title = "Total Samples",
+        value = "42", 
+        showcase = bsicons::bs_icon("basket2-fill", class = "text-primary"),
+        theme = NULL,
+        fill = FALSE,
+        class = "border-0 shadow-sm"
+      ),
+      bslib::value_box(
+        title = "Equipments",
+        value = "42", 
+        showcase = bsicons::bs_icon("house-door-fill", class = "text-primary"),
+        theme = NULL,
+        fill = FALSE,
+        class = "border-0 shadow-sm"
+      ),
+      bslib::value_box(
+        title = "Total Scans",
+        value = "12",
+        showcase = bsicons::bs_icon("qr-code-scan", class = "text-primary"),
+        theme = NULL,
+        fill = FALSE,
+        class = "border-0 shadow-sm"
+      )
+    ),
+
+    # 3. Footer
+    div(
+      class = "text-center text-muted",
+      style = "margin-top: 5rem; padding-bottom: 3rem;",
+      p(bsicons::bs_icon("arrow-up"), "Use the navigation tabs above to get started")
     )
   )
 }
 
 #' Home Page Module Server
-#'
-#' @param id Module ID
-#'
-#' @return Module server logic
-#'
-#' @export
-mod_home_server <- function(id) {
+mod_home_server <- function(id, pool) {
   shiny::moduleServer(id, function(input, output, session) {
-    # Home page is mostly static - no server logic needed yet
+    # Example of pulling a real count for the Home Page Value Box
+    # output$site_count <- renderText({
+    #   # Uses the helper function we discussed earlier
+    #   res <- DBI::dbGetQuery(pool, "SELECT COUNT(*) as n FROM sites")
+    #   res$n
+    # })
   })
 }

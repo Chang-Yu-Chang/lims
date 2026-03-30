@@ -4,24 +4,42 @@
 #'     DO NOT REMOVE.
 #' @import shiny
 #' @noRd
+#' 
+
+
 app_ui <- function(request) {
+  # Define theme
+  my_theme <- bslib::bs_theme(
+    version = 5,
+    bootswatch = "flatly", 
+    base_font = bslib::font_google("Inter"),
+    code_font = bslib::font_google("JetBrains Mono"),
+    primary = "#FFB6C1",
+    "body-bg" = "#ffffff",
+    success = "#73628A"
+  )
+
   tagList(
     # External resources
     golem_add_external_resources(),
     
     # Main app with navbar
-    shiny::navbarPage(
+    bslib::page_navbar(
+      id = "main_nav",
       title = "Chang Lab LIMS",
-      
+      theme = my_theme,
+
       # HOME TAB
-      shiny::tabPanel(
-        "Home",
+      bslib::nav_panel(
+        title = "Home",
+        value = "home",
         mod_home_ui("home")
       ),
       
       # SITES TAB (placeholder)
-      shiny::tabPanel(
-        "Sites",
+      bslib::nav_panel(
+        title = "Sites",
+        value = "sites",
         mod_sites_ui("sites")
       )
     )
