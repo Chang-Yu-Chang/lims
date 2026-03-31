@@ -2,16 +2,18 @@
 % Please edit documentation in R/mod_sites.R
 \name{mod_sites_server}
 \alias{mod_sites_server}
-\title{Sites Management Module Server - Placeholder}
+\title{Sites Management Module Server}
 \usage{
-mod_sites_server(id)
+mod_sites_server(id, pool)
 }
 \arguments{
 \item{id}{Module ID}
+
+\item{pool}{Database pool connection}
 }
 \value{
 Module server logic
 }
 \description{
-Sites Management Module Server - Placeholder
+Sites Management Module Server
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/mod_sites.R
 \name{mod_sites_ui}
 \alias{mod_sites_ui}
-\title{Sites Management Module UI - Placeholder}
+\title{Sites Management Module UI}
 \usage{
 mod_sites_ui(id)
 }
@@ -13,5 +13,5 @@ mod_sites_ui(id)
 Shiny UI
 }
 \description{
-Sites Management Module UI - Placeholder
+Sites Management Module UI
 }

@@ -4,13 +4,7 @@
 \alias{mod_home_server}
 \title{Home Page Module Server}
 \usage{
-mod_home_server(id)
-}
-\arguments{
-\item{id}{Module ID}
-}
-\value{
-Module server logic
+mod_home_server(id, pool)
 }
 \description{
 Home Page Module Server
