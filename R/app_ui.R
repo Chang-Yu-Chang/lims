@@ -6,6 +6,7 @@
 #' @noRd
 #' 
 
+library(bslib)
 
 app_ui <- function(request) {
   # Define theme

@@ -3,7 +3,10 @@ options(golem.app.prod = FALSE) # TRUE = production mode, FALSE = development mo
 
 # ENABLE AUTO-RELOAD: Browser will auto-refresh when you save files
 options(shiny.autoreload = TRUE)
+options(shiny.autoreload.r = TRUE) # Crucial: watches the R/ folder
 options(shiny.autoload.js.version = TRUE)
+options(shiny.minified = TRUE)
+options(sass.cache = FALSE)
 
 # Comment this if you don't want the app to be served on a random port
 options(shiny.host = '0.0.0.0') 

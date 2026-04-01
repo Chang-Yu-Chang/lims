@@ -5,6 +5,9 @@
 #' @import shiny
 #' @noRd
 app_server <- function(input, output, session) {
+  # 1. Run the core database initialization first
+  initialize_database()
+  
   # Initialize database connection pool
   pool <- pool::dbPool(
     RSQLite::SQLite(),

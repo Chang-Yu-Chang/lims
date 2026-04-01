@@ -7,7 +7,6 @@
 #' @return Shiny UI
 #'
 #' @export
-#' Home Page Module UI
 mod_home_ui <- function(id) {
   ns <- shiny::NS(id)
 
