@@ -1,33 +1,34 @@
-# Set options here
-options(golem.app.prod = FALSE) # TRUE = production mode, FALSE = development mode
-
-# ENABLE AUTO-RELOAD: Browser will auto-refresh when you save files
+# 1. SET DEVELOPMENT OPTIONS
+# ---------------------------------------------------------
+options(golem.app.prod = FALSE) 
 options(shiny.autoreload = TRUE)
-options(shiny.autoreload.r = TRUE) # Crucial: watches the R/ folder
-options(shiny.autoload.js.version = TRUE)
-options(shiny.minified = TRUE)
-options(sass.cache = FALSE)
+# This pattern tells Shiny to watch your Module and Function files specifically
+options(shiny.autoreload.pattern = glob2rx("R/*.R"))
+options(shiny.autoreload.legacy_warning = FALSE)
 
-# Comment this if you don't want the app to be served on a random port
+# Fixed port for consistent testing
 options(shiny.host = '0.0.0.0') 
-options(shiny.port = 1234) # A standard port for Shiny
+options(shiny.port = 1234)
 
-# Print development instructions
-cat("\n")
-cat("====================================\n")
-cat("DEVELOPMENT MODE - LIVE RELOAD ACTIVE\n")
-cat("====================================\n")
-cat("1. Make changes to R/ files\n")
-cat("2. Press Ctrl+Shift+L (or Cmd+Shift+L on Mac)\n")
-cat("3. Browser will auto-refresh\n")
-cat("====================================\n\n")
-
-# Detach all loaded packages and clean your environment
+# 2. CLEAN & PREP ENVIRONMENT
+# ---------------------------------------------------------
+# Detach packages to prevent 'masked object' conflicts
 golem::detach_all_attached()
-# rm(list=ls(all.names = TRUE))
 
-# Document and reload your package
+# Document and load the package into memory
+# This makes functions like db_site_add() available
 golem::document_and_reload()
 
-# Run the application
+# 4. PRINT STATUS
+# ---------------------------------------------------------
+cat("\n============================================\n")
+cat("🚀 CHANG LAB LIMS: LIVE REFRESH ACTIVE\n")
+cat("============================================\n")
+cat("• Edit files in /R to trigger auto-reload.\n")
+cat("• If the app crashes, check the terminal below.\n")
+cat("• URL: http://127.0.0.1:1234\n")
+cat("============================================\n\n")
+
+# 5. START APP
+# ---------------------------------------------------------
 run_app()
