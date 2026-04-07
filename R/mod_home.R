@@ -73,37 +73,6 @@ mod_home_ui <- function(id) {
       )
     ),
 
-    bslib::layout_column_wrap(
-      width = 1/3,
-      gap = "1rem",
-      style = "min-height: 250px; min-width: 300px;",
-      
-      bslib::value_box(
-        title = "HAHA",
-        value = "1", # Pure hardcoded string for testing
-        showcase = bsicons::bs_icon("geo-alt-fill", class = "text-primary"),
-        theme = NULL,
-        fill = FALSE,
-        class = "border-0 shadow-sm"
-      ),
-      bslib::value_box(
-        title = "OK",
-        value = "42", 
-        showcase = bsicons::bs_icon("basket2-fill", class = "text-primary"),
-        theme = NULL,
-        fill = FALSE,
-        class = "border-0 shadow-sm"
-      ),
-      bslib::value_box(
-        title = "GREAT",
-        value = "2", 
-        showcase = bsicons::bs_icon("house-door-fill", class = "text-primary"),
-        theme = NULL,
-        fill = FALSE,
-        class = "border-0 shadow-sm"
-      )
-    ),
-
     # 3. Footer
     div(
       class = "text-center text-muted",

@@ -1,14 +1,4 @@
 #' labels UI Function
-#'
-#' @description A shiny Module.
-#'
-#' @param id,input,output,session Internal parameters for {shiny}.
-#'
-#' @noRd 
-#'
-#' @importFrom shiny NS tagList 
-#' @importFrom DT renderDataTable
-#'
 #' @export
 mod_labels_ui <- function(id) {
   ns <- NS(id)
@@ -25,21 +15,15 @@ mod_labels_ui <- function(id) {
             options = list(placeholder = "Search for site...")
           ),
           
-          shiny::numericInput(
-            ns("plant_id_start"),
-            "Plant ID (start)",
-            value = 1
-          ),
-          
-          shiny::numericInput(
-            ns("plant_id_end"),
-            "Plant ID (end)",
-            value = 20
+          shiny::textInput(
+            ns("plant_range"),
+            "Plant IDs (e.g., 1-10 or 1,3,5-7)",
+            value = "1-10"
           ),
 
           shiny::actionButton(
             ns("create_btn"),
-            "Create Label",
+            "Create Labels",
             class = "btn-primary w-100"
           )
         )
@@ -51,131 +35,87 @@ mod_labels_ui <- function(id) {
     )
   )
 }
-    
+
 #' labels Server Functions
-#'
-#' @noRd 
 #' @export
 mod_labels_server <- function(id, pool) {
-  moduleServer(id, function(input, output, session) {
+  shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
+    
     labels_refresh <- shiny::reactiveVal(0)
-    
-    # Fetch available site IDs and update selectize choices
-    shiny::observe({
-      tryCatch({
-        sites <- lims::db_site_fetch_all(pool)
-        if (nrow(sites) > 0) {
-          site_choices <- sites$site_id
-          shiny::updateSelectizeInput(
-            session,
-            "site_id",
-            choices = site_choices,
-            selected = character(0)
-          )
-        }
-      }, error = function(e) {
-        # Silently fail if no sites exist yet
-      })
-    })
-    
-    # Reactive data frame to store generated plant IDs
     generated_labels <- shiny::reactiveVal(data.frame(
-      site_id = character(),
       plant_id = character(),
+      site_id = character(),
       created_at = character(),
       stringsAsFactors = FALSE
     ))
-    
-    # Listen for create button click
+
+    # Update site choices from DB
+    shiny::observe({
+      tryCatch({
+        sites <- db_site_fetch_all(pool)
+        if (nrow(sites) > 0) {
+          shiny::updateSelectizeInput(session, "site_id", choices = sites$site_id, server = TRUE)
+        }
+      }, error = function(e) NULL)
+    })
+
+    # Handle Creation
     shiny::observeEvent(input$create_btn, {
       site_id <- input$site_id
-      plant_id_start <- input$plant_id_start
-      plant_id_end <- input$plant_id_end
+      range_text <- trimws(input$plant_range)
       
-      # Validate inputs
       if (is.null(site_id) || site_id == "") {
-        shiny::showNotification(
-          "Please select a Site ID",
-          type = "error",
-          duration = 5
-        )
+        shiny::showNotification("Please select a Site ID", type = "error")
         return()
       }
       
-      if (is.null(plant_id_start) || is.null(plant_id_end) || plant_id_start < 1 || plant_id_end > 999 || plant_id_start > plant_id_end) {
-        shiny::showNotification(
-          "Plant ID must be between 1 and 999, and start must be <= end",
-          type = "error",
-          duration = 5
-        )
+      # Use the function from fct_labels.R
+      plant_nums <- parse_range(range_text)
+      
+      if (is.null(plant_nums) || any(is.na(plant_nums))) {
+        shiny::showNotification("Invalid range format. Use numbers, commas, and dashes (e.g. 1-5, 10)", type = "error")
         return()
       }
-      
-      # Generate plant IDs in format: ST0001-P001, ST0001-P002, etc.
-      plant_ids <- sprintf("%s-P%03d", site_id, seq(plant_id_start, plant_id_end, by = 1))
-      num_plants <- length(plant_ids)
-      
+
+      new_ids <- sprintf("%s-P%03d", site_id, plant_nums)
+
+      # Deduplication
+      current_data <- generated_labels()
+      final_ids <- new_ids[!(new_ids %in% current_data$plant_id)]
+      duplicates <- new_ids[new_ids %in% current_data$plant_id]
+
+      if (length(duplicates) > 0) {
+        shiny::showNotification(paste("Skipped", length(duplicates), "duplicate labels."), type = "warning")
+      }
+
+      if (length(final_ids) == 0) return()
+
       tryCatch({
-        # Create data frame with generated plant IDs
-        new_labels <- data.frame(
-          plant_id = plant_ids,
-          site_id = rep(site_id, num_plants),
-          created_at = rep(Sys.time(), num_plants),
+        new_rows <- data.frame(
+          plant_id = final_ids,
+          site_id = rep(site_id, length(final_ids)),
+          created_at = rep(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), length(final_ids)),
           stringsAsFactors = FALSE
         )
         
-        # Combine with existing labels
-        current_labels <- generated_labels()
-        all_labels <- rbind(current_labels, new_labels)
-        generated_labels(all_labels)
-        
-        # Show success message
-        shiny::showNotification(
-          paste("Created", num_plants, "labels for", site_id),
-          type = "message",
-          duration = 5
-        )
-        
-        # Trigger table refresh
+        generated_labels(rbind(current_data, new_rows))
+        shiny::showNotification(paste("Added", length(final_ids), "labels."), type = "message")
         labels_refresh(labels_refresh() + 1)
         
       }, error = function(e) {
-        shiny::showNotification(
-          e$message,
-          type = "error",
-          duration = 5
-        )
+        shiny::showNotification(e$message, type = "error")
       })
-    
-    # Display labels table
+    })
+
     output$labels_table <- DT::renderDataTable({
       labels_refresh()
-      
-      # Get the generated labels
-      labels_data <- generated_labels()
-      
-      if (nrow(labels_data) == 0) {
-        # Return empty table with column names if no labels yet
-        labels_data <- data.frame(
-          plant_id = character(),
-          site_id = character(),
-          created_at = character()
-        )
-      }
-      
       DT::datatable(
-        labels_data,
+        generated_labels(),
         colnames = c("Plant ID", "Site ID", "Created At"),
-        options = list(pageLength = 10)
+        options = list(pageLength = 10, order = list(list(2, 'desc'))),
+        rownames = FALSE
       )
-    })
     })
   })
 }
-    
-## To be copied in the UI
-# mod_labels_ui("labels_1")
-    
-## To be copied in the server
-# mod_labels_server("labels_1")
