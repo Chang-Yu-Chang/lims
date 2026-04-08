@@ -49,15 +49,11 @@ po/*~
 rsconnect/
 
 # LIMS specific generated files
-www/qr_*.png
-data/labels/
-data/barcodes/
+www/labels/*.png
+inst/app/www/labels/*.png
 data/*.sqlite
 data/*.db
-*.zip
-inst/doc
-/doc/
-/Meta/
 
 # Purge the .DS_Store
 .DS_Store
+

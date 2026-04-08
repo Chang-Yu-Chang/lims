@@ -19,6 +19,11 @@ mod_labels_ui <- function(id) {
             "Plant IDs (e.g., 1-10 or 1,3,5-7)",
             value = "1-10"
           ),
+          shiny::dateInput(
+            ns("date_sampling"),
+            "Date of sampling",
+            value = NULL
+          ),
           shiny::actionButton(
             ns("create_btn"),
             "Create Labels",
@@ -44,7 +49,7 @@ mod_labels_server <- function(id, pool) {
 
     generated_labels <- shiny::reactiveVal(data.frame(
       plant_id = character(),
-      site_id = character(),
+      date_sam = character(),
       qr_code_path = character(),
       created_at = character(),
       stringsAsFactors = FALSE
@@ -67,6 +72,7 @@ mod_labels_server <- function(id, pool) {
     shiny::observeEvent(input$create_btn, {
       site_id <- input$site_id
       range_text <- trimws(input$plant_range)
+      date_sam <- input$date_sampling
 
       if (is.null(site_id) || site_id == "") {
         shiny::showNotification("Please select a Site ID", type = "error")
@@ -100,20 +106,21 @@ mod_labels_server <- function(id, pool) {
         {
           # Generate QR codes for each plant ID
           qr_paths <- sapply(final_ids, function(pid) {
-            generate_plant_qr(pid)
+            generate_plant_qr(pid, date_sam)
           })
 
           new_rows <- data.frame(
             plant_id = final_ids,
-            site_id = rep(site_id, length(final_ids)),
+            date_sam = date_sam,
             qr_code_path = unname(qr_paths),
             created_at = rep(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), length(final_ids)),
             stringsAsFactors = FALSE
           )
 
-          generated_labels <- generated_labels(rbind(current_data, new_rows))
+          generated_labels(rbind(current_data, new_rows))
 
           shiny::showNotification(paste("Added", length(final_ids), "labels."), type = "message")
+
           labels_refresh(labels_refresh() + 1)
         },
         error = function(e) {
@@ -127,7 +134,7 @@ mod_labels_server <- function(id, pool) {
       labels_refresh()
       DT::datatable(
         generated_labels(),
-        colnames = c("Plant ID", "Site ID", "QR Code Path", "Created At"),
+        colnames = c("Plant ID", "Date Sampled", "QR Code Path", "Created At"),
         options = list(pageLength = 10, order = list(list(3, "desc"))),
         rownames = FALSE
       )

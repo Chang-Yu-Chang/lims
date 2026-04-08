@@ -57,7 +57,7 @@ parse_range <- function(text) {
 #' @import grDevices
 #'
 #' @export
-generate_plant_qr <- function(plant_id, app_dir = "inst/app") {
+generate_plant_qr <- function(plant_id, date_sam, app_dir = "inst/app") {
   # Validate input
   if (is.null(plant_id) || plant_id == "") {
     stop("plant_id cannot be empty")
@@ -75,42 +75,36 @@ generate_plant_qr <- function(plant_id, app_dir = "inst/app") {
       filename <- paste0(plant_id, ".png")
       filepath <- file.path(labels_dir, filename)
 
-      # 1. Generate QR code as a matrix
+      # Generate QR code
       qr <- qrcode::qr_code(plant_id)
-      current_time <- Sys.Date() # date
-      tb_qr <- tibble::as_tibble(as.matrix(qr))
-      tb_qr$y <- factor(1:nrow(tb_qr), nrow(qr):1)
-      plot_qr <- tidyr::pivot_longer(tb_qr, cols = -y, names_to = "x")
-      plot_qr$x <- factor(stringr::str_remove(plot_qr$x, "V"), 1:nrow(qr))
-      plot_qr$value <- as.logical(plot_qr$value)
-      
-      library(ggplot2)
-      #plot(qr)
-      p_qr <- ggplot(plot_qr) +
-        geom_tile(aes(x = x , y = y, fill = value)) +
-        scale_fill_gradient(low = "white", high = "black") +
-        theme_void() + 
-        theme(legend.position='none')
+      dat <- date_sam
+      qr_grob <- grid::rasterGrob(as.raster(1 - qr), interpolate = FALSE)
 
-      
-      # 3. Create a blank plot area
-      # mar = c(0,0,0,0) removes margins so we use the whole space
-      par(mar = c(0, 0, 0, 0))
-      plot(1, type = "n", xlab = "", ylab = "", xlim = c(0, 3), ylim = c(0, 1), axes = FALSE)
+      # Create the ggplot
+      p <- ggplot() +
+        # Set the coordinate system (x from 0 to 3, y from 0 to 1)
+        coord_fixed(ratio = 1, xlim = c(0, 3), ylim = c(0, 1)) +
 
-      # 4. Add the Text (Left Side)
-      # adj = 0 means left-aligned
-      text(x = 0.1, y = 0.85, labels = plant_id, cex = 2.5, font = 2, adj = 0)
-      text(x = 0.2, y = 0.15, labels = current_time, cex = 2.2, font = 2, adj = 0)
+        # Add Plant ID (Top Left)
+        annotate("text",
+          x = 0.1, y = 0.8, label = plant_id,
+          hjust = 0, vjust = 1, size = 5, fontface = "bold"
+        ) +
+        # Add Date (Bottom Left)
+        annotate("text",
+          x = 0.1, y = 0.2, label = dat,
+          hjust = 0, vjust = 0, size = 5, fontface = "bold"
+        ) +
+        # Add QR Code (Right Side)
+        annotation_custom(qr_grob, xmin = 2, xmax = 3, ymin = 0, ymax = 1) +
 
-      # 5. Add the QR Code (Right Side)
-      # We convert the QR matrix to a raster image
-      qr_raster <- as.raster(qr)
-      rasterImage(qr_raster, xleft = 1.8, ybottom = 0.1, xright = 2.8, ytop = 0.9)
+        # Clean up the theme for a "sticker" look
+        theme_void() +
+        theme(panel.background = element_rect(fill = "white", color = "white"))
 
-      dev.off()
+      ggsave(paste0(labels_dir, "/", filename), p, width = 12, height = 4, units = "cm", dpi = 500)
+      cat("\n", plant_id, " generated")
 
-      # # Return relative path for web access (what goes in database)
       relative_path <- file.path("labels", filename)
       return(relative_path)
     },
