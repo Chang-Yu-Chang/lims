@@ -1,12 +1,15 @@
 #' labels UI Function
 #' @export
+
+library(tidyverse)
 mod_labels_ui <- function(id) {
   ns <- NS(id)
   tagList(
     bslib::layout_columns(
-      col_widths = c(4, 8),
+      col_widths = c(4, 4, 8),
+      # Create plant labels
       bslib::card(
-        bslib::card_header("Create Labels"),
+        bslib::card_header("Create Plant Labels"),
         bslib::card_body(
           shiny::selectizeInput(
             ns("site_id"),
@@ -31,6 +34,34 @@ mod_labels_ui <- function(id) {
           )
         )
       ),
+      # Create soil label
+      bslib::card(
+        bslib::card_header("Create Soil Labels"),
+        bslib::card_body(
+          shiny::selectizeInput(
+            ns("site_id"),
+            "Select Site ID",
+            choices = "ST0002",
+            options = list(placeholder = "Search for site...")
+          ),
+          shiny::textInput(
+            ns("soil_range"),
+            "Soik IDs (e.g., 1-10 or 1,3,5-7)",
+            value = "1"
+          ),
+          shiny::dateInput(
+            ns("date_sampling"),
+            "Date of sampling",
+            value = NULL
+          ),
+          shiny::actionButton(
+            ns("create_btn"),
+            "Create Labels",
+            class = "btn-primary w-100"
+          )
+        )
+      ),
+      # Table
       bslib::card(
         bslib::card_header("Created Labels"),
         DT::dataTableOutput(ns("labels_table"))
@@ -73,6 +104,7 @@ mod_labels_server <- function(id, pool) {
       site_id <- input$site_id
       range_text <- trimws(input$plant_range)
       date_sam <- input$date_sampling
+      soil_range_text <- trimws(input$soil_range)
 
       if (is.null(site_id) || site_id == "") {
         shiny::showNotification("Please select a Site ID", type = "error")
@@ -81,6 +113,8 @@ mod_labels_server <- function(id, pool) {
 
       # Use the function from fct_labels.R
       plant_nums <- parse_range(range_text)
+      soil_nums <- parse_range(soil_range_text)
+
 
       if (is.null(plant_nums) || any(is.na(plant_nums))) {
         shiny::showNotification("Invalid range format. Use numbers, commas, and dashes (e.g. 1-5, 10)", type = "error")
@@ -88,6 +122,7 @@ mod_labels_server <- function(id, pool) {
       }
 
       new_ids <- sprintf("%s-P%03d", site_id, plant_nums)
+      soil_ids <- sprintf("%s-S%03d", site_id, soil_nums)
 
       # Deduplication
       current_data <- generated_labels()
@@ -101,6 +136,7 @@ mod_labels_server <- function(id, pool) {
       if (length(final_ids) == 0) {
         return()
       }
+
 
       tryCatch(
         {
@@ -122,6 +158,17 @@ mod_labels_server <- function(id, pool) {
           shiny::showNotification(paste("Added", length(final_ids), "labels."), type = "message")
 
           labels_refresh(labels_refresh() + 1)
+        },
+        error = function(e) {
+          shiny::showNotification(e$message, type = "error")
+        }
+      )
+
+      tryCatch(
+        {
+          sapply(soil_ids, function(sid) {
+            generate_soil_qr(sid, date_sam)
+          })
         },
         error = function(e) {
           shiny::showNotification(e$message, type = "error")
